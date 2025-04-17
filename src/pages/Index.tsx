@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CodeAnalyzer } from "@/components/CodeAnalyzer";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { CodeIcon, CopyIcon, Code2Icon, LightbulbIcon, TerminalIcon, CheckIcon } from "lucide-react";
 import { Spinner } from "@/components/Spinner";
 import { Badge } from "@/components/ui/badge";
@@ -70,7 +70,6 @@ const Index = () => {
     toast({
       title: "Copied to clipboard",
       description: "The text has been copied to your clipboard.",
-      icon: <CheckIcon className="h-4 w-4" />,
     });
   };
 
@@ -129,7 +128,7 @@ console.log(sortArray(unsortedArray));`
             Code Commenter AI
           </h1>
           <p className="text-lg text-muted-foreground">
-            Get understandable comments and helpful suggestions for your code
+            Get understandable comments embedded directly in your code
           </p>
         </div>
 
@@ -203,7 +202,7 @@ console.log(sortArray(unsortedArray));`
                 Analysis Results
               </CardTitle>
               <CardDescription>
-                View the AI-generated comments and suggestions
+                View the code with embedded comments and suggestions
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -211,7 +210,7 @@ console.log(sortArray(unsortedArray));`
                 <TabsList className="grid w-full grid-cols-2 mb-4">
                   <TabsTrigger value="comments" className="flex items-center gap-1">
                     <CodeIcon className="h-4 w-4" />
-                    Comments
+                    Commented Code
                   </TabsTrigger>
                   <TabsTrigger value="suggestions" className="flex items-center gap-1">
                     <LightbulbIcon className="h-4 w-4" />
@@ -219,7 +218,7 @@ console.log(sortArray(unsortedArray));`
                   </TabsTrigger>
                 </TabsList>
                 <TabsContent value="comments" className="mt-0">
-                  <div className="bg-muted/50 p-4 rounded-md font-mono text-sm whitespace-pre-wrap border border-border overflow-auto max-h-[400px]">
+                  <div className="bg-muted/50 p-4 rounded-md font-mono text-sm whitespace-pre-wrap border border-border overflow-auto max-h-[400px] shadow-inner">
                     {analysis.comments}
                   </div>
                   <div className="flex justify-end mt-4">
@@ -235,8 +234,30 @@ console.log(sortArray(unsortedArray));`
                   </div>
                 </TabsContent>
                 <TabsContent value="suggestions" className="mt-0">
-                  <div className="bg-muted/50 p-4 rounded-md font-mono text-sm whitespace-pre-wrap border border-border overflow-auto max-h-[400px]">
-                    {analysis.suggestions}
+                  <div className="bg-muted/50 p-4 rounded-md text-sm whitespace-pre-wrap border border-border overflow-auto max-h-[400px] shadow-inner">
+                    <h3 className="text-lg font-medium mb-3">Improvement Suggestions</h3>
+                    <ul className="space-y-2 list-none">
+                      {analysis.suggestions.split('\n').filter(line => line.trim() && !line.includes('Suggestions for improvement')).map((suggestion, index) => {
+                        // Extract the number if it exists and the text content
+                        const match = suggestion.match(/^(\d+)\.\s+(.+)$/);
+                        if (match) {
+                          return (
+                            <li key={index} className="flex items-start gap-2">
+                              <span className="inline-flex items-center justify-center rounded-full bg-primary/10 w-6 h-6 text-primary text-xs font-medium">
+                                {match[1]}
+                              </span>
+                              <span className="flex-1">{match[2]}</span>
+                            </li>
+                          );
+                        } else {
+                          return (
+                            <li key={index} className="pl-8">
+                              {suggestion}
+                            </li>
+                          );
+                        }
+                      })}
+                    </ul>
                   </div>
                   <div className="flex justify-end mt-4">
                     <Button 

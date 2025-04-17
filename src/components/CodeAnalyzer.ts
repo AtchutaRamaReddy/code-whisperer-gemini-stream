@@ -24,73 +24,73 @@ export class CodeAnalyzer {
     const hasComments = code.includes('//') || code.includes('/*') || code.includes('#');
     const hasFunctions = code.includes('function') || code.includes('def ') || code.includes('void ');
     
-    let comments = `// Code Analysis for ${language} code:\n\n`;
+    // Instead of separate comments, we'll embed them directly in the code
+    const commentChar = isPython ? '#' : '//';
     
-    if (language !== 'unknown') {
-      comments += `// This appears to be ${language} code.\n`;
+    // Create a commented version of the code
+    const codeLines = code.split('\n');
+    let commentedCode = '';
+    
+    // Add header comment
+    commentedCode += `${commentChar} Code analyzed as ${language} code\n`;
+    commentedCode += `${commentChar} Here's what this code does:\n\n`;
+    
+    // Process each line and add appropriate comments
+    for (let i = 0; i < codeLines.length; i++) {
+      const line = codeLines[i];
+      const trimmedLine = line.trim();
+      
+      // Add the original line
+      commentedCode += line + '\n';
+      
+      // Add comments for specific patterns
+      if (i < codeLines.length - 1) {
+        if ((trimmedLine.includes('function ') || trimmedLine.includes('def ')) && hasFunctions) {
+          commentedCode += `${commentChar} This function organizes code for reuse\n`;
+        } else if ((trimmedLine.includes('for ') || trimmedLine.includes('while ')) && hasLoops) {
+          commentedCode += `${commentChar} This loop repeats operations on multiple items\n`;
+        } else if ((trimmedLine.includes('if ') || trimmedLine.includes('else ')) && hasConditionals) {
+          commentedCode += `${commentChar} This condition controls which code runs based on different situations\n`;
+        } else if (trimmedLine.includes('class ')) {
+          commentedCode += `${commentChar} This class defines a blueprint for creating objects\n`;
+        } else if (trimmedLine.includes('import ') || trimmedLine.includes('require') || trimmedLine.includes('#include')) {
+          commentedCode += `${commentChar} This imports external code to use in this file\n`;
+        } else if (trimmedLine.includes('try ') || trimmedLine.includes('catch ') || trimmedLine.includes('except ')) {
+          commentedCode += `${commentChar} This handles errors that might occur\n`;
+        }
+      }
     }
     
-    comments += "// Here's what the code is doing:\n";
-    
-    if (hasFunctions) {
-      comments += "// - Defines functions/methods to organize and reuse code\n";
-    }
-    
-    if (hasLoops) {
-      comments += "// - Contains loop structures for repetitive operations\n";
-    }
-    
-    if (hasConditionals) {
-      comments += "// - Has conditional logic for decision making\n";
-    }
-    
-    if (code.includes('class')) {
-      comments += "// - Defines classes for object-oriented programming\n";
-    }
-    
-    if (code.includes('import') || code.includes('require') || code.includes('#include')) {
-      comments += "// - Imports external libraries or modules\n";
-    }
-    
-    if (code.includes('try') || code.includes('catch') || code.includes('except')) {
-      comments += "// - Implements error handling\n";
-    }
-    
-    if (code.length < 50) {
-      comments += "// - This is a very small code snippet that might be a utility or example\n";
-    } else if (code.length > 500) {
-      comments += "// - This is a substantial code block that likely handles multiple related tasks\n";
-    }
-    
-    let suggestions = "// Suggestions for improvement:\n\n";
+    // Generate suggestions separately
+    let suggestions = "# Suggestions for improvement:\n\n";
     
     if (!hasComments) {
-      suggestions += "// 1. Add descriptive comments to explain the purpose of key functions and complex logic\n";
+      suggestions += "1. Add descriptive comments to explain the purpose of key functions and complex logic\n";
     }
     
     if (code.includes('console.log') || code.includes('print(') || code.includes('System.out.println')) {
-      suggestions += "// 2. Consider removing or disabling debug print statements before production deployment\n";
+      suggestions += "2. Consider removing or disabling debug print statements before production deployment\n";
     }
     
     if (hasLoops && !code.includes('try') && !code.includes('catch') && !code.includes('except')) {
-      suggestions += "// 3. Add error handling around critical operations, especially within loops\n";
+      suggestions += "3. Add error handling around critical operations, especially within loops\n";
     }
     
-    suggestions += "// 4. Consider breaking complex functions into smaller, more focused ones for better readability\n";
-    suggestions += "// 5. Use meaningful variable names that clearly indicate their purpose\n";
+    suggestions += "4. Consider breaking complex functions into smaller, more focused ones for better readability\n";
+    suggestions += "5. Use meaningful variable names that clearly indicate their purpose\n";
     
     if (code.includes('TODO') || code.includes('FIXME')) {
-      suggestions += "// 6. Address TODO and FIXME comments before finalizing the code\n";
+      suggestions += "6. Address TODO and FIXME comments before finalizing the code\n";
     }
     
     if (language === 'JavaScript' && !code.includes('===')) {
-      suggestions += "// 7. Consider using strict equality (===) instead of loose equality (==) in JavaScript\n";
+      suggestions += "7. Consider using strict equality (===) instead of loose equality (==) in JavaScript\n";
     }
     
     if (language === 'Python' && hasFunctions && !code.includes('def __init__')) {
-      suggestions += "// 8. Consider adding docstrings to functions to document their purpose and parameters\n";
+      suggestions += "8. Consider adding docstrings to functions to document their purpose and parameters\n";
     }
     
-    return { comments, suggestions };
+    return { comments: commentedCode, suggestions };
   }
 }

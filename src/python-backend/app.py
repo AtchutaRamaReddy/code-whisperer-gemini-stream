@@ -29,8 +29,8 @@ def detect_language(code):
     
     return "unknown"
 
-def generate_comments(code):
-    """Generate user-friendly comments for the code."""
+def generate_embedded_comments(code):
+    """Generate user-friendly comments embedded directly in the code."""
     language = detect_language(code)
     
     prompt = f"""
@@ -40,11 +40,15 @@ def generate_comments(code):
     {code}
     ```
     
-    Analyze this code and provide:
-    1. Clear, simple comments that explain what the code does in terms that a non-programmer could understand
+    Analyze this code and insert appropriate comments directly into the code that:
+    1. Explain what the code does in simple, non-technical terms
     2. Explain the purpose of key functions or code blocks
-    3. Don't be overly technical, focus on the "what" and "why" not the "how"
-    4. Format your response as code comments in the appropriate style for {language}
+    3. Focus on the "what" and "why" not the "how"
+    4. Use the appropriate comment style for {language}
+    5. Make the comments beginner-friendly and easy to understand
+    6. Don't comment on every single line, just key parts
+    
+    Return only the code with your embedded comments.
     """
     
     response = model.generate_content(prompt)
@@ -96,6 +100,8 @@ st.markdown("""
     .code-box {
         border-radius: 8px;
         border: 1px solid #E5E7EB;
+        background-color: #F8F9FA;
+        padding: 1rem;
     }
     .stButton>button {
         background-color: #3B82F6;
@@ -107,12 +113,19 @@ st.markdown("""
     .stButton>button:hover {
         background-color: #2563EB;
     }
+    .suggestion-item {
+        background-color: #F3F4F6;
+        border-radius: 8px;
+        padding: 0.75rem;
+        margin-bottom: 0.5rem;
+        border-left: 4px solid #3B82F6;
+    }
 </style>
 """, unsafe_allow_html=True)
 
 # Header
 st.markdown('<p class="main-header">💻 Code Commenter AI</p>', unsafe_allow_html=True)
-st.markdown('<p class="sub-header">Get understandable comments and helpful suggestions for your code</p>', unsafe_allow_html=True)
+st.markdown('<p class="sub-header">Get understandable comments embedded directly in your code</p>', unsafe_allow_html=True)
 
 # Main interface
 with st.container():
@@ -178,7 +191,7 @@ if analyze_button and code:
         
         try:
             st.write("Generating comments...")
-            comments = generate_comments(code)
+            commented_code = generate_embedded_comments(code)
             
             st.write("Generating suggestions...")
             suggestions = generate_suggestions(code)
@@ -189,21 +202,38 @@ if analyze_button and code:
             st.stop()
     
     # Display results in tabs
-    tab1, tab2 = st.tabs(["User-Friendly Comments", "Improvement Suggestions"])
+    tab1, tab2 = st.tabs(["Commented Code", "Improvement Suggestions"])
     
     with tab1:
-        st.subheader("Code Comments")
-        st.code(comments, language=language if language != "unknown" else None)
+        st.subheader("Code with Comments")
+        st.markdown('<div class="code-box">', unsafe_allow_html=True)
+        st.code(commented_code, language=language if language != "unknown" else None)
+        st.markdown('</div>', unsafe_allow_html=True)
         st.download_button(
-            label="Download Comments",
-            data=comments,
-            file_name="code_comments.txt",
+            label="Download Commented Code",
+            data=commented_code,
+            file_name="commented_code.txt",
             mime="text/plain"
         )
         
     with tab2:
         st.subheader("Improvement Suggestions")
-        st.markdown(suggestions)
+        
+        # Parse the numbered list and format each item
+        suggestion_lines = suggestions.split('\n')
+        current_suggestion = ""
+        
+        for line in suggestion_lines:
+            if re.match(r'^\d+\.', line.strip()):
+                if current_suggestion:
+                    st.markdown(f'<div class="suggestion-item">{current_suggestion}</div>', unsafe_allow_html=True)
+                current_suggestion = line
+            elif line.strip():
+                current_suggestion += f"<br>{line}"
+        
+        if current_suggestion:
+            st.markdown(f'<div class="suggestion-item">{current_suggestion}</div>', unsafe_allow_html=True)
+        
         st.download_button(
             label="Download Suggestions",
             data=suggestions,
@@ -212,23 +242,3 @@ if analyze_button and code:
         )
 elif analyze_button:
     st.error("Please enter some code to analyze.")
-
-# Add help information
-with st.expander("How to use this tool"):
-    st.markdown("""
-    1. **Paste your code** in the text area above
-    2. Click **Analyze Code**
-    3. View the comments that explain your code in simple terms
-    4. Check the suggestions to improve your code
-    5. Download results if needed
-    
-    This tool uses Google's Gemini AI to analyze your code and provide helpful comments 
-    and suggestions in human-readable language.
-    """)
-
-# Footer
-st.markdown("---")
-st.markdown("""
-**Note**: This is using the Gemini API to generate comments and suggestions. The quality of 
-the analysis depends on the complexity and clarity of the code provided.
-""")
