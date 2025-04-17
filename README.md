@@ -1,73 +1,62 @@
-# Welcome to your Lovable project
 
-## Project info
+# Code Commenter AI
 
-**URL**: https://lovable.dev/projects/5f362510-df8c-46fb-b60c-d6b0fe706bce
+This project provides an automatic code commenter that generates understandable comments and useful suggestions for your code. It uses Google's Gemini AI API to analyze code and provide insights in a way that's easy for everyone to understand.
 
-## How can I edit this code?
+## Features
 
-There are several ways of editing your application.
+- 🔍 **Automatic language detection** - Works with Python, JavaScript, Java, C++, and more
+- 💬 **User-friendly code comments** - Explains what the code does in simple terms
+- 💡 **Improvement suggestions** - Provides actionable tips to make your code better
+- 🎨 **Clean, modern UI** - Easy-to-use interface for both developers and non-developers
+- 📋 **Copy-to-clipboard** - Easily copy results to use in your projects
+- 📱 **Responsive design** - Works on desktop and mobile devices
 
-**Use Lovable**
+## Project Structure
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/5f362510-df8c-46fb-b60c-d6b0fe706bce) and start prompting.
+This project has two main components:
 
-Changes made via Lovable will be committed automatically to this repo.
+1. **Frontend React Application**: A demo UI that shows how the application works
+2. **Python Backend**: The actual code analysis engine using Streamlit and Google's Gemini API
 
-**Use your preferred IDE**
+## Running the Python Backend
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+To run the actual code commenting system:
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+1. Navigate to the `src/python-backend` directory
+2. Install the required dependencies:
+   ```
+   pip install -r requirements.txt
+   ```
+3. Run the Streamlit app:
+   ```
+   streamlit run app.py
+   ```
+4. Open your browser to the URL provided by Streamlit (typically http://localhost:8501)
 
-Follow these steps:
+## How It Works
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+1. **Language Detection**: The system detects the programming language of your code
+2. **AI Analysis**: Google's Gemini API analyzes the code structure and patterns
+3. **Comment Generation**: AI generates clear, human-readable comments that explain what the code does
+4. **Suggestion Creation**: The system provides useful suggestions to improve code quality
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+## API Key Security
 
-# Step 3: Install the necessary dependencies.
-npm i
+The Gemini API key in this demo is for demonstration purposes only. In a production environment:
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+- Store API keys as environment variables
+- Use secure vaults or secret management systems
+- Consider implementing a server-side API to protect your keys
 
-**Edit a file directly in GitHub**
+## Limitations
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+- The quality of analysis depends on the complexity and clarity of the provided code
+- Very large code files may need to be analyzed in smaller sections
+- Some language-specific optimizations might not be detected
 
-**Use GitHub Codespaces**
+## Future Improvements
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/5f362510-df8c-46fb-b60c-d6b0fe706bce) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+- Add support for more programming languages
+- Implement full code refactoring suggestions
+- Create a VSCode extension for direct editor integration
