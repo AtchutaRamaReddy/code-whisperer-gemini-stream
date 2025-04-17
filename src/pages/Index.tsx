@@ -4,42 +4,18 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CodeAnalyzer } from "@/components/CodeAnalyzer";
 import { useToast } from "@/components/ui/use-toast";
-import { InfoIcon, CopyIcon, Code2Icon } from "lucide-react";
-
-// Spinner component for loading states
-const Spinner = ({ className }: { className?: string }) => {
-  return (
-    <svg
-      className={`animate-spin h-4 w-4 ${className || ""}`}
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-    >
-      <circle
-        className="opacity-25"
-        cx="12"
-        cy="12"
-        r="10"
-        stroke="currentColor"
-        strokeWidth="4"
-      ></circle>
-      <path
-        className="opacity-75"
-        fill="currentColor"
-        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-      ></path>
-    </svg>
-  );
-};
+import { CodeIcon, CopyIcon, Code2Icon, LightbulbIcon, TerminalIcon, CheckIcon } from "lucide-react";
+import { Spinner } from "@/components/Spinner";
+import { Badge } from "@/components/ui/badge";
 
 const Index = () => {
   const [code, setCode] = useState("");
   const [analysis, setAnalysis] = useState<{ comments: string; suggestions: string } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("comments");
+  const [detectedLanguage, setDetectedLanguage] = useState<string | null>(null);
   const { toast } = useToast();
 
   const analyzeCode = async () => {
@@ -59,6 +35,10 @@ const Index = () => {
       const result = await CodeAnalyzer.analyze(code);
       setAnalysis(result);
       setActiveTab("comments");
+      
+      // Detect language from code patterns
+      const language = detectLanguage(code);
+      setDetectedLanguage(language);
     } catch (error) {
       toast({
         title: "Analysis failed",
@@ -71,11 +51,26 @@ const Index = () => {
     }
   };
 
+  const detectLanguage = (code: string): string => {
+    // Simple language detection based on patterns
+    if (code.includes('function') || code.includes('const') || code.includes('let')) {
+      return 'JavaScript';
+    } else if (code.includes('def ') || code.includes('import ') || code.includes('class ')) {
+      return 'Python';
+    } else if (code.includes('public class') || code.includes('public static void main')) {
+      return 'Java';
+    } else if (code.includes('#include') || code.includes('std::')) {
+      return 'C++';
+    }
+    return 'Unknown';
+  };
+
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
     toast({
       title: "Copied to clipboard",
       description: "The text has been copied to your clipboard.",
+      icon: <CheckIcon className="h-4 w-4" />,
     });
   };
 
@@ -118,6 +113,7 @@ console.log(sortArray(unsortedArray));`
 
   const loadExample = (language: keyof typeof codeExamples) => {
     setCode(codeExamples[language]);
+    setDetectedLanguage(language.charAt(0).toUpperCase() + language.slice(1));
     toast({
       title: `${language.charAt(0).toUpperCase() + language.slice(1)} example loaded`,
       description: "You can now analyze this example code.",
@@ -125,10 +121,10 @@ console.log(sortArray(unsortedArray));`
   };
 
   return (
-    <div className="container mx-auto py-8 px-4">
+    <div className="container mx-auto py-8 px-4 min-h-screen bg-gradient-to-b from-background to-secondary/5">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-primary mb-2 flex items-center justify-center">
+          <h1 className="text-4xl font-bold text-primary mb-2 flex items-center justify-center animate-fade-in">
             <Code2Icon className="mr-2" />
             Code Commenter AI
           </h1>
@@ -137,66 +133,93 @@ console.log(sortArray(unsortedArray));`
           </p>
         </div>
 
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Your Code</CardTitle>
+        <Card className="mb-8 shadow-lg border-primary/10 hover-scale">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2">
+              <CodeIcon className="h-5 w-5" />
+              Your Code
+            </CardTitle>
             <CardDescription>
               Paste your code below and our AI will analyze it
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Textarea
-              placeholder="Paste your code here..."
-              className="min-h-[200px] font-mono text-sm"
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-            />
-            <div className="mt-2 flex justify-start space-x-2">
+            <div className="relative">
+              <Textarea
+                placeholder="Paste your code here..."
+                className="min-h-[200px] font-mono text-sm resize-y"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+              />
+              {detectedLanguage && (
+                <Badge 
+                  variant="outline" 
+                  className="absolute top-2 right-2 bg-background/80 backdrop-blur-sm"
+                >
+                  <TerminalIcon className="h-3 w-3 mr-1" />
+                  {detectedLanguage}
+                </Badge>
+              )}
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
               <Button 
                 variant="outline" 
                 size="sm" 
                 onClick={() => loadExample('python')}
+                className="flex items-center gap-1"
               >
+                <CodeIcon className="h-4 w-4" />
                 Python Example
               </Button>
               <Button 
                 variant="outline" 
                 size="sm" 
                 onClick={() => loadExample('javascript')}
+                className="flex items-center gap-1"
               >
+                <CodeIcon className="h-4 w-4" />
                 JavaScript Example
               </Button>
             </div>
           </CardContent>
-          <CardFooter className="flex justify-end">
+          <CardFooter className="pt-2 flex justify-end">
             <Button 
               onClick={analyzeCode} 
               disabled={isLoading}
               size="lg"
               className="relative"
             >
-              {isLoading && <Spinner className="mr-2" />}
+              {isLoading ? <Spinner className="mr-2" /> : <LightbulbIcon className="h-4 w-4 mr-2" />}
               Analyze Code
             </Button>
           </CardFooter>
         </Card>
 
         {analysis && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Analysis Results</CardTitle>
+          <Card className="shadow-lg border-primary/10 animate-fade-in">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2">
+                <LightbulbIcon className="h-5 w-5" />
+                Analysis Results
+              </CardTitle>
               <CardDescription>
                 View the AI-generated comments and suggestions
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="comments">Comments</TabsTrigger>
-                  <TabsTrigger value="suggestions">Suggestions</TabsTrigger>
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-2 mb-4">
+                  <TabsTrigger value="comments" className="flex items-center gap-1">
+                    <CodeIcon className="h-4 w-4" />
+                    Comments
+                  </TabsTrigger>
+                  <TabsTrigger value="suggestions" className="flex items-center gap-1">
+                    <LightbulbIcon className="h-4 w-4" />
+                    Suggestions
+                  </TabsTrigger>
                 </TabsList>
-                <TabsContent value="comments" className="mt-4">
-                  <div className="bg-muted p-4 rounded-md font-mono text-sm whitespace-pre-wrap">
+                <TabsContent value="comments" className="mt-0">
+                  <div className="bg-muted/50 p-4 rounded-md font-mono text-sm whitespace-pre-wrap border border-border overflow-auto max-h-[400px]">
                     {analysis.comments}
                   </div>
                   <div className="flex justify-end mt-4">
@@ -204,14 +227,15 @@ console.log(sortArray(unsortedArray));`
                       variant="outline" 
                       onClick={() => handleCopy(analysis.comments)}
                       size="sm"
+                      className="hover:bg-primary/10"
                     >
                       <CopyIcon className="h-4 w-4 mr-2" />
                       Copy to Clipboard
                     </Button>
                   </div>
                 </TabsContent>
-                <TabsContent value="suggestions" className="mt-4">
-                  <div className="bg-muted p-4 rounded-md font-mono text-sm whitespace-pre-wrap">
+                <TabsContent value="suggestions" className="mt-0">
+                  <div className="bg-muted/50 p-4 rounded-md font-mono text-sm whitespace-pre-wrap border border-border overflow-auto max-h-[400px]">
                     {analysis.suggestions}
                   </div>
                   <div className="flex justify-end mt-4">
@@ -219,6 +243,7 @@ console.log(sortArray(unsortedArray));`
                       variant="outline" 
                       onClick={() => handleCopy(analysis.suggestions)}
                       size="sm"
+                      className="hover:bg-primary/10"
                     >
                       <CopyIcon className="h-4 w-4 mr-2" />
                       Copy to Clipboard
@@ -229,18 +254,6 @@ console.log(sortArray(unsortedArray));`
             </CardContent>
           </Card>
         )}
-
-        <div className="mt-8">
-          <Alert>
-            <InfoIcon className="h-4 w-4" />
-            <AlertTitle>Information</AlertTitle>
-            <AlertDescription>
-              This is a frontend demo. In a production environment, the analysis would be performed 
-              by a Python backend using the Google Gemini API. See the instructions in 
-              the README to run the Python backend locally.
-            </AlertDescription>
-          </Alert>
-        </div>
       </div>
     </div>
   );
