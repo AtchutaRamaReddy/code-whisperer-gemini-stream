@@ -8,6 +8,22 @@ export class CodeAnalyzer {
     // In a real implementation, this would call a Python backend that uses the Gemini API
     // For demonstration purposes, we'll return simulated results based on simple code pattern detection
     
+    // Detect language
+    const language = this.detectLanguage(code);
+    
+    // Generate comments
+    const commentedCode = this.generateComments(code, language);
+    
+    // Generate suggestions
+    const suggestions = this.generateSuggestions(code, language);
+    
+    return { 
+      comments: commentedCode, 
+      suggestions 
+    };
+  }
+  
+  private static detectLanguage(code: string): string {
     const isJavaScript = code.includes('function') || code.includes('const') || code.includes('let');
     const isPython = code.includes('def ') || code.includes('import ') || code.includes('class ');
     const isJava = code.includes('public class') || code.includes('public static void main');
@@ -19,13 +35,12 @@ export class CodeAnalyzer {
     else if (isJava) language = 'Java';
     else if (isCpp) language = 'C++';
     
-    const hasLoops = code.includes('for') || code.includes('while');
-    const hasConditionals = code.includes('if') || code.includes('else');
-    const hasComments = code.includes('//') || code.includes('/*') || code.includes('#');
-    const hasFunctions = code.includes('function') || code.includes('def ') || code.includes('void ');
-    
+    return language;
+  }
+  
+  private static generateComments(code: string, language: string): string {
     // Instead of separate comments, we'll embed them directly in the code
-    const commentChar = isPython ? '#' : '//';
+    const commentChar = language === 'Python' ? '#' : '//';
     
     // Create a commented version of the code
     const codeLines = code.split('\n');
@@ -45,34 +60,42 @@ export class CodeAnalyzer {
       
       // Add comments for specific patterns
       if (i < codeLines.length - 1) {
-        if ((trimmedLine.includes('function ') || trimmedLine.includes('def ')) && hasFunctions) {
+        if (this.isFunction(trimmedLine, language)) {
           commentedCode += `${commentChar} This function organizes code for reuse\n`;
-        } else if ((trimmedLine.includes('for ') || trimmedLine.includes('while ')) && hasLoops) {
+        } else if (this.isLoop(trimmedLine)) {
           commentedCode += `${commentChar} This loop repeats operations on multiple items\n`;
-        } else if ((trimmedLine.includes('if ') || trimmedLine.includes('else ')) && hasConditionals) {
+        } else if (this.isCondition(trimmedLine)) {
           commentedCode += `${commentChar} This condition controls which code runs based on different situations\n`;
         } else if (trimmedLine.includes('class ')) {
           commentedCode += `${commentChar} This class defines a blueprint for creating objects\n`;
-        } else if (trimmedLine.includes('import ') || trimmedLine.includes('require') || trimmedLine.includes('#include')) {
+        } else if (this.isImport(trimmedLine, language)) {
           commentedCode += `${commentChar} This imports external code to use in this file\n`;
-        } else if (trimmedLine.includes('try ') || trimmedLine.includes('catch ') || trimmedLine.includes('except ')) {
+        } else if (this.isErrorHandling(trimmedLine, language)) {
           commentedCode += `${commentChar} This handles errors that might occur\n`;
         }
       }
     }
     
-    // Generate suggestions separately
+    return commentedCode;
+  }
+  
+  private static generateSuggestions(code: string, language: string): string {
+    // Generate suggestions based on code patterns
     let suggestions = "# Suggestions for improvement:\n\n";
+    
+    const hasComments = code.includes('//') || code.includes('/*') || code.includes('#');
+    const hasLoops = code.includes('for') || code.includes('while');
+    const hasFunctions = code.includes('function') || code.includes('def ') || code.includes('void ');
     
     if (!hasComments) {
       suggestions += "1. Add descriptive comments to explain the purpose of key functions and complex logic\n";
     }
     
-    if (code.includes('console.log') || code.includes('print(') || code.includes('System.out.println')) {
+    if (this.hasDebugStatements(code, language)) {
       suggestions += "2. Consider removing or disabling debug print statements before production deployment\n";
     }
     
-    if (hasLoops && !code.includes('try') && !code.includes('catch') && !code.includes('except')) {
+    if (hasLoops && !this.hasErrorHandling(code, language)) {
       suggestions += "3. Add error handling around critical operations, especially within loops\n";
     }
     
@@ -91,6 +114,77 @@ export class CodeAnalyzer {
       suggestions += "8. Consider adding docstrings to functions to document their purpose and parameters\n";
     }
     
-    return { comments: commentedCode, suggestions };
+    return suggestions;
+  }
+  
+  // Helper methods for identifying code patterns
+  private static isFunction(line: string, language: string): boolean {
+    if (language === 'JavaScript' || language === 'unknown') {
+      return line.includes('function ') || /\w+\s*\(\s*\)\s*\{/.test(line) || 
+             line.includes('=>') || line.match(/^\s*\w+\s*=\s*function/) !== null;
+    } else if (language === 'Python') {
+      return line.includes('def ');
+    } else if (language === 'Java' || language === 'C++') {
+      // Simplified check for Java/C++ methods
+      return /\w+\s+\w+\s*\([^)]*\)\s*(\{|$)/.test(line);
+    }
+    return false;
+  }
+  
+  private static isLoop(line: string): boolean {
+    return line.includes('for ') || line.includes('while ') || 
+           line.includes('forEach') || line.includes('.map(') || 
+           line.includes('.reduce(') || line.includes('.filter(');
+  }
+  
+  private static isCondition(line: string): boolean {
+    return line.includes('if ') || line.includes('else ') || 
+           line.includes('switch ') || line.includes('case ') || 
+           line.trim().startsWith('?') || line.includes(' ? ');
+  }
+  
+  private static isImport(line: string, language: string): boolean {
+    if (language === 'JavaScript' || language === 'unknown') {
+      return line.includes('import ') || line.includes('require(');
+    } else if (language === 'Python') {
+      return line.includes('import ') || line.includes('from ');
+    } else if (language === 'Java') {
+      return line.includes('import ');
+    } else if (language === 'C++') {
+      return line.includes('#include');
+    }
+    return false;
+  }
+  
+  private static isErrorHandling(line: string, language: string): boolean {
+    return line.includes('try ') || line.includes('catch ') || 
+           line.includes('except ') || line.includes('finally ') || 
+           line.includes('throw ') || line.includes('throws ') || 
+           line.includes('raise ');
+  }
+  
+  private static hasErrorHandling(code: string, language: string): boolean {
+    return code.includes('try') || code.includes('catch') || 
+           code.includes('except') || code.includes('finally') || 
+           code.includes('throw') || code.includes('throws') || 
+           code.includes('raise');
+  }
+  
+  private static hasDebugStatements(code: string, language: string): boolean {
+    if (language === 'JavaScript' || language === 'unknown') {
+      return code.includes('console.log') || code.includes('console.debug') || 
+             code.includes('console.info') || code.includes('console.warn') || 
+             code.includes('console.error') || code.includes('alert(');
+    } else if (language === 'Python') {
+      return code.includes('print(') || code.includes('logging.') || 
+             code.includes('logger.') || code.includes('pdb.');
+    } else if (language === 'Java') {
+      return code.includes('System.out.print') || code.includes('System.err.print') || 
+             code.includes('logger.') || code.includes('Log.');
+    } else if (language === 'C++') {
+      return code.includes('cout') || code.includes('printf') || 
+             code.includes('std::cerr') || code.includes('std::cout');
+    }
+    return false;
   }
 }
